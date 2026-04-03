@@ -88,7 +88,7 @@ public class AttachmentStudioPlugin: NSObject, FlutterPlugin, VNDocumentCameraVi
 
     // ── Picker ─────────────────────────────────────────────────────────────
 
-    private func startPicker(isMulti: Boolean) {
+    private func startPicker(isMulti: Bool) {
         var config = PHPickerConfiguration()
         config.filter = .images
         config.selectionLimit = isMulti ? 0 : 1
@@ -97,7 +97,7 @@ public class AttachmentStudioPlugin: NSObject, FlutterPlugin, VNDocumentCameraVi
         hostViewController?.present(picker, animated: true)
     }
 
-    public func picker(_ picker: PHPickerViewController, didFinishWith results: [PHPickerResult]) {
+    public func picker(_ picker: PHPickerViewController, didFinish results: [PHPickerResult]) {
         picker.dismiss(animated: true)
         if results.isEmpty {
             self.result?(nil)
@@ -149,18 +149,4 @@ public class AttachmentStudioPlugin: NSObject, FlutterPlugin, VNDocumentCameraVi
         let url = URL(fileURLWithPath: path)
         try? data.write(to: url)
         return path
-    }
-}
-
-// Swift doesn't have Boolean type like Kotlin, it's Bool.
-// I used Boolean in startPicker signature by mistake, correcting to Bool.
-extension AttachmentStudioPlugin {
-    private func startPicker(isMulti: Bool) {
-        var config = PHPickerConfiguration()
-        config.filter = .images
-        config.selectionLimit = isMulti ? 0 : 1
-        let picker = PHPickerViewController(configuration: config)
-        picker.delegate = self
-        hostViewController?.present(picker, animated: true)
-    }
 }
