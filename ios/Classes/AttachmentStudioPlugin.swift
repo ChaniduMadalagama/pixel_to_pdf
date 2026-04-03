@@ -37,7 +37,7 @@ public class AttachmentStudioPlugin: NSObject, FlutterPlugin, VNDocumentCameraVi
 
     private func startScan() {
         guard VNDocumentCameraViewController.isSupported else {
-            result?(FlutterError(code: "NOT_SUPPORTED", message: "Document scanner not supported on this device", detail: nil))
+            result?(FlutterError(code: "NOT_SUPPORTED", message: "Document scanner not supported on this device", details: nil))
             return
         }
         let scanner = VNDocumentCameraViewController()
@@ -68,7 +68,7 @@ public class AttachmentStudioPlugin: NSObject, FlutterPlugin, VNDocumentCameraVi
 
     private func startCamera() {
         guard UIImagePickerController.isSourceTypeAvailable(.camera) else {
-            result?(FlutterError(code: "NOT_SUPPORTED", message: "Camera not available", detail: nil))
+            result?(FlutterError(code: "NOT_SUPPORTED", message: "Camera not available", details: nil))
             return
         }
         let picker = UIImagePickerController()
@@ -97,7 +97,7 @@ public class AttachmentStudioPlugin: NSObject, FlutterPlugin, VNDocumentCameraVi
         hostViewController?.present(picker, animated: true)
     }
 
-    public func picker(_ picker: PHPickerViewController, didFinish results: [PHPickerResult]) {
+    public func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
         picker.dismiss(animated: true)
         if results.isEmpty {
             self.result?(nil)
@@ -149,4 +149,5 @@ public class AttachmentStudioPlugin: NSObject, FlutterPlugin, VNDocumentCameraVi
         let url = URL(fileURLWithPath: path)
         try? data.write(to: url)
         return path
+    }
 }
