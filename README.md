@@ -44,7 +44,7 @@ dependencies:
 ```dart
 import 'package:pixel_to_pdf/pixel_to_pdf.dart';
 
-final results = await AttachmentStudio.show(
+final results = await PixelToPdf.show(
   context,
   config: AttachmentConfig(
     uiStyle: AttachmentUIStyle.bottomSheet,

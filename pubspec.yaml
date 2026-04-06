@@ -25,6 +25,6 @@ flutter:
     platforms:
       android:
         package: com.example.pixel_to_pdf
-        pluginClass: AttachmentStudioPlugin
+        pluginClass: PixelToPdfPlugin
       ios:
-        pluginClass: AttachmentStudioPlugin
+        pluginClass: PixelToPdfPlugin

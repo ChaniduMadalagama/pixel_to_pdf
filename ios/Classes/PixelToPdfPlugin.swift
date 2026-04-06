@@ -3,13 +3,13 @@ import UIKit
 import VisionKit
 import PhotosUI
 
-public class AttachmentStudioPlugin: NSObject, FlutterPlugin, VNDocumentCameraViewControllerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, PHPickerViewControllerDelegate, UIDocumentPickerDelegate {
+public class PixelToPdfPlugin: NSObject, FlutterPlugin, VNDocumentCameraViewControllerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, PHPickerViewControllerDelegate, UIDocumentPickerDelegate {
     private var result: FlutterResult?
     private var hostViewController: UIViewController?
 
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(name: "pixel_to_pdf/scanner", binaryMessenger: registrar.messenger())
-        let instance = AttachmentStudioPlugin()
+        let instance = PixelToPdfPlugin()
         registrar.addMethodCallDelegate(instance, channel: channel)
     }
 

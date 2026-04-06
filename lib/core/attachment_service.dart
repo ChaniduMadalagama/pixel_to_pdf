@@ -9,9 +9,9 @@ import 'package:pdf/widgets.dart' as pw;
 
 import '../models/attachment_models.dart';
 
-class AttachmentStudioService {
-  AttachmentStudioService._();
-  static final AttachmentStudioService instance = AttachmentStudioService._();
+class PixelToPdfService {
+  PixelToPdfService._();
+  static final PixelToPdfService instance = PixelToPdfService._();
 
   static const _channel = MethodChannel('pixel_to_pdf/scanner');
 
@@ -30,7 +30,7 @@ class AttachmentStudioService {
       }
       return null;
     } catch (e) {
-      debugPrint('AttachmentStudioService: scanDocument error: $e');
+      debugPrint('PixelToPdfService: scanDocument error: $e');
       return null;
     }
   }
@@ -45,7 +45,7 @@ class AttachmentStudioService {
       final file = enableCropping ? await cropImage(path) : File(path);
       return file != null ? _resultFromPath(file.path) : null;
     } catch (e) {
-      debugPrint('AttachmentStudioService: takePhoto error: $e');
+      debugPrint('PixelToPdfService: takePhoto error: $e');
       return null;
     }
   }
@@ -60,7 +60,7 @@ class AttachmentStudioService {
       final file = enableCropping ? await cropImage(path) : File(path);
       return file != null ? _resultFromPath(file.path) : null;
     } catch (e) {
-      debugPrint('AttachmentStudioService: pickImage error: $e');
+      debugPrint('PixelToPdfService: pickImage error: $e');
       return null;
     }
   }
@@ -71,7 +71,7 @@ class AttachmentStudioService {
       if (results == null) return [];
       return results.map((e) => _resultFromPath(e.toString())).toList();
     } catch (e) {
-      debugPrint('AttachmentStudioService: pickMultiImage error: $e');
+      debugPrint('PixelToPdfService: pickMultiImage error: $e');
       return [];
     }
   }
@@ -86,7 +86,7 @@ class AttachmentStudioService {
       }
       return null;
     } catch (e) {
-      debugPrint('AttachmentStudioService: pickFile error: $e');
+      debugPrint('PixelToPdfService: pickFile error: $e');
       return null;
     }
   }
@@ -137,7 +137,7 @@ class AttachmentStudioService {
       );
       return cropped != null ? File(cropped.path) : null;
     } catch (e) {
-      debugPrint('AttachmentStudioService: cropImage error: $e');
+      debugPrint('PixelToPdfService: cropImage error: $e');
       return null;
     }
   }

@@ -7,11 +7,11 @@ import './ui/attachment_picker_shell.dart';
 export './models/attachment_models.dart';
 export './models/attachment_config.dart';
 
-class AttachmentStudio {
-  AttachmentStudio._();
+class PixelToPdf {
+  PixelToPdf._();
 
   /// Access the raw service functions for custom UI implementations.
-  static AttachmentStudioService get service => AttachmentStudioService.instance;
+  static PixelToPdfService get service => PixelToPdfService.instance;
 
   /// Shows the pre-built attachment picker UI or a custom UI.
   /// 
@@ -42,8 +42,8 @@ class AttachmentStudio {
         ),
       );
     } else {
-      // For AttachmentUIStyle.custom, the developer should use AttachmentStudio.service directly.
-      debugPrint('AttachmentStudio: Custom style selected. Use AttachmentStudio.service directly.');
+      // For AttachmentUIStyle.custom, the developer should use PixelToPdf.service directly.
+      debugPrint('PixelToPdf: Custom style selected. Use PixelToPdf.service directly.');
       return null;
     }
   }

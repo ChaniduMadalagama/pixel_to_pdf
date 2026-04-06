@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../core/attachment_service.dart';
 import '../models/attachment_config.dart';
 import '../models/attachment_models.dart';
@@ -179,7 +180,7 @@ class _AttachmentPickerShellState extends State<AttachmentPickerShell> {
             color: theme.primaryColor,
             onTap: () async {
               setState(() => _isProcessing = true);
-              final result = await AttachmentStudioService.instance.takePhoto(
+              final result = await PixelToPdfService.instance.takePhoto(
                 enableCropping: widget.config.enableCropping,
               );
               if (mounted) _handleResult(context, result);
@@ -193,7 +194,7 @@ class _AttachmentPickerShellState extends State<AttachmentPickerShell> {
             color: theme.primaryColor.withValues(alpha: 0.8),
             onTap: () async {
               setState(() => _isProcessing = true);
-              final result = await AttachmentStudioService.instance.scanDocument();
+              final result = await PixelToPdfService.instance.scanDocument();
               if (mounted) _handleResult(context, result);
             },
           ),
@@ -216,10 +217,10 @@ class _AttachmentPickerShellState extends State<AttachmentPickerShell> {
             onTap: () async {
               setState(() => _isProcessing = true);
               if (widget.config.allowMultipleGallery) {
-                final results = await AttachmentStudioService.instance.pickMultiFromGallery();
+                final results = await PixelToPdfService.instance.pickMultiFromGallery();
                 if (mounted) _handleMultipleResults(context, results);
               } else {
-                final result = await AttachmentStudioService.instance.pickImage(
+                final result = await PixelToPdfService.instance.pickImage(
                   enableCropping: widget.config.enableCropping,
                 );
                 if (mounted) _handleResult(context, result);
@@ -234,7 +235,7 @@ class _AttachmentPickerShellState extends State<AttachmentPickerShell> {
             color: Colors.orangeAccent,
             onTap: () async {
               setState(() => _isProcessing = true);
-              final result = await AttachmentStudioService.instance.pickFile();
+              final result = await PixelToPdfService.instance.pickFile();
               if (mounted) _handleResult(context, result);
             },
           ),
