@@ -1,4 +1,4 @@
-package com.example.attachment_studio
+package com.example.pixel_to_pdf
 
 import android.app.Activity
 import android.content.Intent
@@ -31,7 +31,7 @@ class AttachmentStudioPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, 
     private val REQ_CODE_PICK_FILE = 1005
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-        channel = MethodChannel(flutterPluginBinding.binaryMessenger, "attachment_studio/scanner")
+        channel = MethodChannel(flutterPluginBinding.binaryMessenger, "pixel_to_pdf/scanner")
         channel.setMethodCallHandler(this)
     }
 

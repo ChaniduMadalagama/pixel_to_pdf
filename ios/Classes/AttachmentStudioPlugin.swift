@@ -8,7 +8,7 @@ public class AttachmentStudioPlugin: NSObject, FlutterPlugin, VNDocumentCameraVi
     private var hostViewController: UIViewController?
 
     public static func register(with registrar: FlutterPluginRegistrar) {
-        let channel = FlutterMethodChannel(name: "attachment_studio/scanner", binaryMessenger: registrar.messenger())
+        let channel = FlutterMethodChannel(name: "pixel_to_pdf/scanner", binaryMessenger: registrar.messenger())
         let instance = AttachmentStudioPlugin()
         registrar.addMethodCallDelegate(instance, channel: channel)
     }

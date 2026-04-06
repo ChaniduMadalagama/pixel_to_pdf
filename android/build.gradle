@@ -1,4 +1,4 @@
-group 'com.example.attachment_studio'
+group 'com.example.pixel_to_pdf'
 version '1.0-SNAPSHOT'
 
 buildscript {

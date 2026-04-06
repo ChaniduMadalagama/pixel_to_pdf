@@ -13,7 +13,7 @@ class AttachmentStudioService {
   AttachmentStudioService._();
   static final AttachmentStudioService instance = AttachmentStudioService._();
 
-  static const _channel = MethodChannel('attachment_studio/scanner');
+  static const _channel = MethodChannel('pixel_to_pdf/scanner');
 
   // ── Document Scanning ───────────────────────────────────────────────────
 
