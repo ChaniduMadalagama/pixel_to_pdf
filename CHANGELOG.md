@@ -1,3 +1,9 @@
+## 1.0.3
+
+* **Bug Fixes**: Resolved critical iOS memory crashes during high-resolution document scanning.
+* **Refactoring**: Improved `BuildContext` safety in asynchronous gaps within the picker logic.
+* **Features**: Enhanced `PixelToPdf.show` with a custom `builder` option for fully customized acquisition UIs.
+
 ## 1.0.2
 
 * **Documentation**: Completed documentation for all public widgets and members.

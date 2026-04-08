@@ -1,6 +1,6 @@
 name: pixel_to_pdf
 description: "A comprehensive attachment picker and document scanner for Flutter. Supports camera, gallery, file picking, and native document scanning with cropping."
-version: 1.0.2
+version: 1.0.3
 homepage: https://github.com/ChaniduMadalagama/pixel_to_pdf
 repository: https://github.com/ChaniduMadalagama/pixel_to_pdf
 
