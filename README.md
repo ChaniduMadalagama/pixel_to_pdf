@@ -1,10 +1,10 @@
 # pixel_to_pdf
 
-A comprehensive attachment picker and document scanner for Flutter.
+A comprehensive attachment picker and document scanner for Flutter. Supports camera, gallery, file picking, and native document scanning with cropping.
 
 ## Features
 
-- **Document Scanning**: Native document scanning with automatic edge detection and cropping.
+- **Document Scanning**: Native document scanning with automatic edge detection and cropping (via Google ML Kit).
 - **Camera**: Take photos directly from the app.
 - **Gallery Picker**: Pick images from the gallery (single or multi-select).
 - **File Picker**: Pick any file from the device storage.
@@ -22,22 +22,31 @@ dependencies:
 
 ### Android Setup
 
-1. Add the following permissions to your `AndroidManifest.xml`:
+1. **Min SDK**: Requires at least **API 21**.
+2. **Permissions**: Add this to your `AndroidManifest.xml`:
 ```xml
 <uses-permission android:name="android.permission.CAMERA" />
 ```
-2. Your `minSdkVersion` must be at least **21**.
+3. **Image Cropper**: To support image cropping, you must register the `UCropActivity` in your `AndroidManifest.xml`:
+```xml
+<activity
+    android:name="com.yalantis.ucrop.UCropActivity"
+    android:screenOrientation="portrait"
+    android:theme="@style/Theme.AppCompat.Light.NoActionBar"/>
+```
+> [!NOTE]
+> The package handles `FileProvider` internally using the authority `${applicationId}.pixel_to_pdf.fileprovider`. No manual FileProvider setup is required unless there is a naming conflict.
 
 ### iOS Setup
 
-1. Add the following keys to your `Info.plist`:
+1. **Deployment Target**: Requires at least **iOS 14.0**.
+2. **Permissions**: Add the following keys to your `Info.plist`:
 ```xml
 <key>NSCameraUsageDescription</key>
 <string>We need access to your camera to scan documents and take photos.</string>
 <key>NSPhotoLibraryUsageDescription</key>
-<string>We need access to your photo library to pick images.</string>
+<string>We need access to your photo library to select images.</string>
 ```
-2. Your deployment target must be at least **iOS 13.0**.
 
 ## Usage
 
@@ -48,12 +57,17 @@ final results = await PixelToPdf.show(
   context,
   config: AttachmentConfig(
     uiStyle: AttachmentUIStyle.bottomSheet,
-    allowMultiple: true,
+    features: [
+      AttachmentFeature.scanDoc,
+      AttachmentFeature.takePhoto,
+      AttachmentFeature.fromGallery,
+      AttachmentFeature.fromFiles,
+    ],
   ),
 );
 ```
 
-## Testing Locally
+## Local Development
 
 To test this package locally:
 ```yaml
@@ -62,7 +76,7 @@ dependencies:
     path: ../pixel_to_pdf
 ```
 
-## Publishing to pub.dev
+## Publishing
 
 1. Check for issues: `flutter pub publish --dry-run`
 2. Publish: `flutter pub publish`
