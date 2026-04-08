@@ -1,11 +1,15 @@
 package com.example.pixel_to_pdf
 
+import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.MediaStore
 import androidx.annotation.NonNull
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.RESULT_FORMAT_JPEG
@@ -25,7 +29,8 @@ import java.io.FileOutputStream
 import java.io.InputStream
 import java.util.UUID
 
-class PixelToPdfPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, PluginRegistry.ActivityResultListener {
+class PixelToPdfPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, 
+    PluginRegistry.ActivityResultListener, PluginRegistry.RequestPermissionsResultListener {
     private lateinit var channel: MethodChannel
     private var activity: Activity? = null
     private var pendingResult: Result? = null
@@ -36,6 +41,7 @@ class PixelToPdfPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Plugin
     private val REQ_CODE_PICK_IMAGE = 1003
     private val REQ_CODE_PICK_MULTI_IMAGE = 1004
     private val REQ_CODE_PICK_FILE = 1005
+    private val REQ_CODE_PERMISSION_CAMERA = 1006
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, "pixel_to_pdf/scanner")
@@ -84,25 +90,52 @@ class PixelToPdfPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Plugin
     }
 
     private fun startCamera() {
-        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-        val context = activity?.applicationContext ?: return
+        val currentActivity = activity ?: return
         
-        val photoFile = File.createTempFile(
-            "IMG_${System.currentTimeMillis()}",
-            ".jpg",
-            context.cacheDir
-        )
-        currentCameraImagePath = photoFile.absolutePath
+        // 1. Check for CAMERA permission
+        if (ContextCompat.checkSelfPermission(currentActivity, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(currentActivity, arrayOf(Manifest.permission.CAMERA), REQ_CODE_PERMISSION_CAMERA)
+            return
+        }
 
-        val photoURI: Uri = FileProvider.getUriForFile(
-            context,
-            context.packageName + ".pixel_to_pdf.fileprovider",
-            photoFile
-        )
-        intent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI)
-        // CRITICAL BUG FIX: Grant intent URIs for camera to write into
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-        activity?.startActivityForResult(intent, REQ_CODE_TAKE_IMAGE)
+        // 2. Permission is granted, proceed with camera launch
+        try {
+            val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+            val context = currentActivity.applicationContext
+            
+            val photoFile = File.createTempFile(
+                "IMG_${System.currentTimeMillis()}",
+                ".jpg",
+                context.cacheDir
+            )
+            currentCameraImagePath = photoFile.absolutePath
+
+            val photoURI: Uri = FileProvider.getUriForFile(
+                context,
+                context.packageName + ".pixel_to_pdf.fileprovider",
+                photoFile
+            )
+            intent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI)
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+            currentActivity.startActivityForResult(intent, REQ_CODE_TAKE_IMAGE)
+        } catch (e: Exception) {
+            // Handle launch failures (e.g. ActivityNotFoundException or early SecurityException)
+            pendingResult?.error("CAMERA_LAUNCH_FAILED", e.message, null)
+            pendingResult = null
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray): Boolean {
+        if (requestCode == REQ_CODE_PERMISSION_CAMERA) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                startCamera()
+            } else {
+                pendingResult?.error("PERMISSION_DENIED", "Camera permission is required", null)
+                pendingResult = null
+            }
+            return true
+        }
+        return false
     }
 
     private fun startPicker(isMulti: Boolean) {
@@ -195,6 +228,7 @@ class PixelToPdfPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Plugin
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         activity = binding.activity
         binding.addActivityResultListener(this)
+        binding.addRequestPermissionsResultListener(this)
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
@@ -204,6 +238,7 @@ class PixelToPdfPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Plugin
     override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
         activity = binding.activity
         binding.addActivityResultListener(this)
+        binding.addRequestPermissionsResultListener(this)
     }
 
     override fun onDetachedFromActivity() {
