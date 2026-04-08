@@ -1,3 +1,7 @@
+## 1.0.5
+
+* **Enhancement**: Added Swift Package Manager (SPM) support for iOS, improving package resolution and pub.dev compatibility.
+
 ## 1.0.4
 
 * **Maintenance**: Cleaned up internal debugging logs and library declarations to follow high-quality Dart conventions.
