@@ -4,7 +4,12 @@ import '../core/attachment_service.dart';
 import '../models/attachment_config.dart';
 import '../models/attachment_models.dart';
 
+/// A standalone widget that triggers a specific acquisition feature.
+/// 
+/// This button can be used to build custom attachment picker UIs while
+/// reusing the package's underlying logic.
 class AttachmentFeatureButton extends StatelessWidget {
+  /// Creates a [AttachmentFeatureButton].
   const AttachmentFeatureButton({
     super.key,
     required this.feature,
@@ -14,11 +19,20 @@ class AttachmentFeatureButton extends StatelessWidget {
     this.onProcessingStateChanged,
   });
 
+  /// The specific acquisition feature to trigger when tapped.
   final AttachmentFeature feature;
+
+  /// The configuration used for the acquisition (e.g., cropping settings).
   final AttachmentConfig config;
+
+  /// Called when an attachment is successfully acquired.
   final ValueChanged<List<AttachmentResult>>? onResult;
+
+  /// Called when the processing state (loading) changes.
   final ValueChanged<bool>? onProcessingStateChanged;
 
+  /// An optional custom child widget to use as the button body.
+  /// If provided, uses a [GestureDetector] to wrap this child.
   final Widget? child;
 
   Future<void> _handleTap() async {

@@ -8,6 +8,10 @@ export './models/attachment_models.dart';
 export './models/attachment_config.dart';
 export './widgets/attachment_feature_button.dart';
 
+/// The primary entry point for the pixel_to_pdf package.
+/// 
+/// This class provides a simple static wrapper to launch the acquisition UI
+/// or access the underlying raw service.
 class PixelToPdf {
   PixelToPdf._();
 

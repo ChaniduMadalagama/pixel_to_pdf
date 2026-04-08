@@ -9,15 +9,22 @@ import 'package:pdf/widgets.dart' as pw;
 
 import '../models/attachment_models.dart';
 
+/// A singleton service that provides native acquisition capabilities for 
+/// document scanning, image capture, and file selection.
 class PixelToPdfService {
   PixelToPdfService._();
+  
+  /// The singleton instance of [PixelToPdfService].
   static final PixelToPdfService instance = PixelToPdfService._();
 
   static const _channel = MethodChannel('pixel_to_pdf/scanner');
 
   // ── Document Scanning ───────────────────────────────────────────────────
 
-  /// Launches the native document scanner and returns a single PDF file.
+  /// Launches the native document scanner and returns a single PDF file result.
+  /// 
+  /// Utilizes ML Kit for edge detection and automatic perspective correction.
+  /// Returns null if the user cancels the operation.
   Future<AttachmentResult?> scanDocument() async {
     try {
       final result = await _channel.invokeMethod('scanDocument');
@@ -37,6 +44,10 @@ class PixelToPdfService {
 
   // ── Camera ─────────────────────────────────────────────────────────────
 
+  /// Launches the native camera to take a single photo.
+  /// 
+  /// If [enableCropping] is true, launches the image cropper after capture.
+  /// Returns null if the user cancels.
   Future<AttachmentResult?> takePhoto({bool enableCropping = true}) async {
     print("takePhoto: started, enableCropping=$enableCropping");
     try {
@@ -65,6 +76,9 @@ class PixelToPdfService {
 
   // ── Gallery ────────────────────────────────────────────────────────────
 
+  /// Picks a single image from the device gallery.
+  /// 
+  /// If [enableCropping] is true, launches the image cropper after selection.
   Future<AttachmentResult?> pickImage({bool enableCropping = true}) async {
     try {
       final String? path = await _channel.invokeMethod('pickImage');
@@ -78,6 +92,9 @@ class PixelToPdfService {
     }
   }
 
+  /// Picks multiple images from the device gallery.
+  /// 
+  /// Returns a list of [AttachmentResult] objects.
   Future<List<AttachmentResult>> pickMultiFromGallery() async {
     try {
       final List? results = await _channel.invokeMethod('pickMultiImage');
@@ -91,6 +108,7 @@ class PixelToPdfService {
 
   // ── File Picker ────────────────────────────────────────────────────────
 
+  /// Launches the device file picker to select any document or file.
   Future<AttachmentResult?> pickFile() async {
     try {
       final String? path = await _channel.invokeMethod('pickFile');
