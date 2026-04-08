@@ -154,7 +154,6 @@ class PixelToPdfService {
           ),
           IOSUiSettings(
             title: 'Crop Image',
-            embedInNavigationController: true,
           ),
         ],
       );
