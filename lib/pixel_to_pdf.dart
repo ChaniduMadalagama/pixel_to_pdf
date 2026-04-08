@@ -6,6 +6,7 @@ import './ui/attachment_picker_shell.dart';
 
 export './models/attachment_models.dart';
 export './models/attachment_config.dart';
+export './widgets/attachment_feature_button.dart';
 
 class PixelToPdf {
   PixelToPdf._();
@@ -24,21 +25,23 @@ class PixelToPdf {
     required AttachmentConfig config,
     Widget Function(BuildContext context, AttachmentConfig config)? builder,
   }) async {
-    final child = builder != null ? builder(context, config) : AttachmentPickerShell(config: config);
-
     if (config.uiStyle == AttachmentUIStyle.bottomSheet) {
       return showModalBottomSheet<List<AttachmentResult>>(
         context: context,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
-        builder: (_) => child,
+        builder: (bottomSheetContext) => builder != null 
+            ? builder(bottomSheetContext, config) 
+            : AttachmentPickerShell(config: config),
       );
     } else if (config.uiStyle == AttachmentUIStyle.dialog) {
       return showDialog<List<AttachmentResult>>(
         context: context,
-        builder: (_) => Dialog(
+        builder: (dialogContext) => Dialog(
           backgroundColor: Colors.transparent,
-          child: child,
+          child: builder != null 
+              ? builder(dialogContext, config) 
+              : AttachmentPickerShell(config: config),
         ),
       );
     } else {

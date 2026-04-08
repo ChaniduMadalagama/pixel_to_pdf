@@ -8,9 +8,11 @@ environment:
   flutter: ">=3.3.0"
 
 dependencies:
+  crop_your_image: ^2.0.0
   flutter:
     sdk: flutter
-  image_cropper: ^5.0.0
+  image: ^4.8.0
+  image_cropper: ^12.2.0
   path: ^1.8.3
   path_provider: ^2.1.0
   pdf: ^3.10.7

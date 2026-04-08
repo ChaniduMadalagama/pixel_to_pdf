@@ -38,12 +38,25 @@ class PixelToPdfService {
   // ── Camera ─────────────────────────────────────────────────────────────
 
   Future<AttachmentResult?> takePhoto({bool enableCropping = true}) async {
+    print("takePhoto: started, enableCropping=$enableCropping");
     try {
+      print("takePhoto: invoking 'takeImage' channel");
       final String? path = await _channel.invokeMethod('takeImage');
-      if (path == null) return null;
+      print("takePhoto: 'takeImage' channel returned path: $path");
+      
+      if (path == null) {
+        print("takePhoto: path is null, returning null early");
+        return null;
+      }
 
+      print("takePhoto: now evaluating crop step. Will crop? $enableCropping");
+      
       final file = enableCropping ? await cropImage(path) : File(path);
-      return file != null ? _resultFromPath(file.path) : null;
+      print("takePhoto: final file is: ${file?.path}");
+      
+      final result = file != null ? _resultFromPath(file.path) : null;
+      print("takePhoto: parsed result object: $result");
+      return result;
     } catch (e) {
       debugPrint('PixelToPdfService: takePhoto error: $e');
       return null;
@@ -119,7 +132,16 @@ class PixelToPdfService {
   }
 
   Future<File?> cropImage(String imagePath) async {
+    print("cropImage: invoked with imagePath=$imagePath");
     try {
+      if (Platform.isIOS) {
+        // Wait on iOS to allow the previous fullscreen view (Camera/Gallery) to fully settle.
+        // This ensures TOCropViewController measures the Safe Area correctly.
+        print("cropImage: iOS detected, awaiting geometry stabilization...");
+        await Future.delayed(const Duration(milliseconds: 1000));
+      }
+
+      print("cropImage: calling ImageCropper().cropImage...");
       final cropped = await ImageCropper().cropImage(
         sourcePath: imagePath,
         uiSettings: [
@@ -132,12 +154,15 @@ class PixelToPdfService {
           ),
           IOSUiSettings(
             title: 'Crop Image',
+            embedInNavigationController: true,
           ),
         ],
       );
+      print("cropImage: returned from ImageCropper. result path: ${cropped?.path}");
       return cropped != null ? File(cropped.path) : null;
     } catch (e) {
       debugPrint('PixelToPdfService: cropImage error: $e');
+      print("cropImage: CAUGHT EXCEPTION: $e");
       return null;
     }
   }
