@@ -1,4 +1,4 @@
-# attachment_studio
+# pixel_to_pdf
 
 A comprehensive attachment picker and document scanner for Flutter.
 
@@ -13,11 +13,11 @@ A comprehensive attachment picker and document scanner for Flutter.
 
 ## Installation
 
-Add `attachment_studio` to your `pubspec.yaml`:
+Add `pixel_to_pdf` to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  attachment_studio: ^1.0.0
+  pixel_to_pdf: ^1.0.0
 ```
 
 ### Android Setup
@@ -42,9 +42,9 @@ dependencies:
 ## Usage
 
 ```dart
-import 'package:attachment_studio/attachment_studio.dart';
+import 'package:pixel_to_pdf/pixel_to_pdf.dart';
 
-final results = await AttachmentStudio.show(
+final results = await PixelToPdf.show(
   context,
   config: AttachmentConfig(
     uiStyle: AttachmentUIStyle.bottomSheet,
@@ -58,8 +58,8 @@ final results = await AttachmentStudio.show(
 To test this package locally:
 ```yaml
 dependencies:
-  attachment_studio:
-    path: ../attachment_studio
+  pixel_to_pdf:
+    path: ../pixel_to_pdf
 ```
 
 ## Publishing to pub.dev

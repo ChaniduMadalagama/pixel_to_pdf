@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import '../core/attachment_service.dart';
+
 import '../models/attachment_config.dart';
 import '../models/attachment_models.dart';
+import '../widgets/attachment_feature_button.dart';
 
 class AttachmentPickerShell extends StatefulWidget {
   const AttachmentPickerShell({
@@ -20,14 +21,6 @@ class _AttachmentPickerShellState extends State<AttachmentPickerShell> {
   bool _showCaptureSubOptions = false;
   bool _showUploadSubOptions = false;
 
-  void _handleResult(BuildContext context, AttachmentResult? result) {
-    if (result != null) {
-      Navigator.pop(context, [result]);
-    } else {
-      if (mounted) setState(() => _isProcessing = false);
-    }
-  }
-
   void _handleMultipleResults(BuildContext context, List<AttachmentResult> results) {
     if (results.isNotEmpty) {
       Navigator.pop(context, results);
@@ -39,9 +32,10 @@ class _AttachmentPickerShellState extends State<AttachmentPickerShell> {
   @override
   Widget build(BuildContext context) {
     final theme = widget.config.theme;
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
     
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + bottomPadding),
       decoration: BoxDecoration(
         color: theme.backgroundColor,
         borderRadius: widget.config.uiStyle == AttachmentUIStyle.bottomSheet
@@ -166,77 +160,58 @@ class _AttachmentPickerShellState extends State<AttachmentPickerShell> {
   }
 
   Widget _buildCaptureOptions() {
-    final theme = widget.config.theme;
     final showTake = widget.config.features.contains(AttachmentFeature.takePhoto);
     final showScan = widget.config.features.contains(AttachmentFeature.scanDoc);
 
     return Row(
       children: [
         if (showTake)
-          _ActionTile(
-            icon: Icons.camera_alt_rounded,
-            label: 'Take Photo',
-            color: theme.primaryColor,
-            onTap: () async {
-              setState(() => _isProcessing = true);
-              final result = await AttachmentStudioService.instance.takePhoto(
-                enableCropping: widget.config.enableCropping,
-              );
-              if (mounted) _handleResult(context, result);
-            },
+          Expanded(
+            child: AttachmentFeatureButton(
+              feature: AttachmentFeature.takePhoto,
+              config: widget.config,
+              onProcessingStateChanged: (val) => mounted ? setState(() => _isProcessing = val) : null,
+              onResult: (res) => mounted ? _handleMultipleResults(context, res) : null,
+            ),
           ),
         if (showTake && showScan) const SizedBox(width: 16),
         if (showScan)
-          _ActionTile(
-            icon: Icons.document_scanner_rounded,
-            label: 'Scan Doc',
-            color: theme.primaryColor.withValues(alpha: 0.8),
-            onTap: () async {
-              setState(() => _isProcessing = true);
-              final result = await AttachmentStudioService.instance.scanDocument();
-              if (mounted) _handleResult(context, result);
-            },
+          Expanded(
+            child: AttachmentFeatureButton(
+              feature: AttachmentFeature.scanDoc,
+              config: widget.config,
+              onProcessingStateChanged: (val) => mounted ? setState(() => _isProcessing = val) : null,
+              onResult: (res) => mounted ? _handleMultipleResults(context, res) : null,
+            ),
           ),
       ],
     );
   }
 
   Widget _buildUploadOptions() {
-    final theme = widget.config.theme;
     final showGallery = widget.config.features.contains(AttachmentFeature.fromGallery);
     final showFiles = widget.config.features.contains(AttachmentFeature.fromFiles);
 
     return Row(
       children: [
         if (showGallery)
-          _ActionTile(
-            icon: Icons.photo_library_rounded,
-            label: 'Photos',
-            color: theme.accentColor,
-            onTap: () async {
-              setState(() => _isProcessing = true);
-              if (widget.config.allowMultipleGallery) {
-                final results = await AttachmentStudioService.instance.pickMultiFromGallery();
-                if (mounted) _handleMultipleResults(context, results);
-              } else {
-                final result = await AttachmentStudioService.instance.pickImage(
-                  enableCropping: widget.config.enableCropping,
-                );
-                if (mounted) _handleResult(context, result);
-              }
-            },
+          Expanded(
+            child: AttachmentFeatureButton(
+              feature: AttachmentFeature.fromGallery,
+              config: widget.config,
+              onProcessingStateChanged: (val) => mounted ? setState(() => _isProcessing = val) : null,
+              onResult: (res) => mounted ? _handleMultipleResults(context, res) : null,
+            ),
           ),
         if (showGallery && showFiles) const SizedBox(width: 16),
         if (showFiles)
-          _ActionTile(
-            icon: Icons.folder_rounded,
-            label: 'Files',
-            color: Colors.orangeAccent,
-            onTap: () async {
-              setState(() => _isProcessing = true);
-              final result = await AttachmentStudioService.instance.pickFile();
-              if (mounted) _handleResult(context, result);
-            },
+          Expanded(
+            child: AttachmentFeatureButton(
+              feature: AttachmentFeature.fromFiles,
+              config: widget.config,
+              onProcessingStateChanged: (val) => mounted ? setState(() => _isProcessing = val) : null,
+              onResult: (res) => mounted ? _handleMultipleResults(context, res) : null,
+            ),
           ),
       ],
     );

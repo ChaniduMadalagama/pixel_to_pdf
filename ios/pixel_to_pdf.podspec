@@ -1,5 +1,5 @@
 Pod::Spec.new do |s|
-  s.name             = 'attachment_studio'
+  s.name             = 'pixel_to_pdf'
   s.version          = '1.0.0'
   s.summary          = 'A comprehensive attachment picker and document scanner.'
   s.description      = <<-DESC

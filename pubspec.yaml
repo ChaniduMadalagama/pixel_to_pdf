@@ -1,16 +1,18 @@
-name: attachment_studio
+name: pixel_to_pdf
 description: "A comprehensive attachment picker and document scanner for Flutter. Supports camera, gallery, file picking, and native document scanning with cropping."
 version: 1.0.0
-homepage: https://github.com/example/attachment_studio
+homepage: https://github.com/example/pixel_to_pdf
 
 environment:
   sdk: ^3.11.0
   flutter: ">=3.3.0"
 
 dependencies:
+  crop_your_image: ^2.0.0
   flutter:
     sdk: flutter
-  image_cropper: ^5.0.0
+  image: ^4.8.0
+  image_cropper: ^12.2.0
   path: ^1.8.3
   path_provider: ^2.1.0
   pdf: ^3.10.7
@@ -24,7 +26,7 @@ flutter:
   plugin:
     platforms:
       android:
-        package: com.example.attachment_studio
-        pluginClass: AttachmentStudioPlugin
+        package: com.example.pixel_to_pdf
+        pluginClass: PixelToPdfPlugin
       ios:
-        pluginClass: AttachmentStudioPlugin
+        pluginClass: PixelToPdfPlugin

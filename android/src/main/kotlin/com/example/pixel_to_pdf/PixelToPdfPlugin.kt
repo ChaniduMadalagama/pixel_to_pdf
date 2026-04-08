@@ -1,10 +1,12 @@
-package com.example.attachment_studio
+package com.example.pixel_to_pdf
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.MediaStore
 import androidx.annotation.NonNull
+import androidx.core.content.FileProvider
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.RESULT_FORMAT_JPEG
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.SCANNER_MODE_FULL
@@ -18,11 +20,16 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import io.flutter.plugin.common.PluginRegistry
+import java.io.File
+import java.io.FileOutputStream
+import java.io.InputStream
+import java.util.UUID
 
-class AttachmentStudioPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, PluginRegistry.ActivityResultListener {
+class PixelToPdfPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, PluginRegistry.ActivityResultListener {
     private lateinit var channel: MethodChannel
     private var activity: Activity? = null
     private var pendingResult: Result? = null
+    private var currentCameraImagePath: String? = null
 
     private val REQ_CODE_SCAN = 1001
     private val REQ_CODE_TAKE_IMAGE = 1002
@@ -31,7 +38,7 @@ class AttachmentStudioPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, 
     private val REQ_CODE_PICK_FILE = 1005
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-        channel = MethodChannel(flutterPluginBinding.binaryMessenger, "attachment_studio/scanner")
+        channel = MethodChannel(flutterPluginBinding.binaryMessenger, "pixel_to_pdf/scanner")
         channel.setMethodCallHandler(this)
     }
 
@@ -56,12 +63,10 @@ class AttachmentStudioPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, 
         }
     }
 
-    // ── Document Scanner ───────────────────────────────────────────────────
-
     private fun startScan() {
         val options = GmsDocumentScannerOptions.Builder()
             .setScannerMode(SCANNER_MODE_FULL)
-            .setResultFormat(RESULT_FORMAT_JPEG)
+            .setResultFormats(RESULT_FORMAT_JPEG)
             .setGalleryImportAllowed(true)
             .build()
 
@@ -78,14 +83,27 @@ class AttachmentStudioPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, 
         }
     }
 
-    // ── Camera ─────────────────────────────────────────────────────────────
-
     private fun startCamera() {
         val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+        val context = activity?.applicationContext ?: return
+        
+        val photoFile = File.createTempFile(
+            "IMG_${System.currentTimeMillis()}",
+            ".jpg",
+            context.cacheDir
+        )
+        currentCameraImagePath = photoFile.absolutePath
+
+        val photoURI: Uri = FileProvider.getUriForFile(
+            context,
+            context.packageName + ".pixel_to_pdf.fileprovider",
+            photoFile
+        )
+        intent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI)
+        // CRITICAL BUG FIX: Grant intent URIs for camera to write into
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
         activity?.startActivityForResult(intent, REQ_CODE_TAKE_IMAGE)
     }
-
-    // ── Picker ─────────────────────────────────────────────────────────────
 
     private fun startPicker(isMulti: Boolean) {
         val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
@@ -101,10 +119,40 @@ class AttachmentStudioPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, 
         activity?.startActivityForResult(intent, REQ_CODE_PICK_FILE)
     }
 
-    // ── Activity Results ────────────────────────────────────────────────────
+    private fun copyUriToCache(context: Context, uri: Uri): String? {
+        val scheme = uri.scheme
+        if (scheme != "content") {
+            return uri.path
+        }
+        return try {
+            val inputStream: InputStream? = context.contentResolver.openInputStream(uri)
+            val tempFile = File(context.cacheDir, "copied_${UUID.randomUUID()}.tmp")
+            val outputStream = FileOutputStream(tempFile)
+            inputStream?.copyTo(outputStream)
+            inputStream?.close()
+            outputStream.close()
+            tempFile.absolutePath
+        } catch (e: Exception) {
+            null
+        }
+    }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
+        // CRITICAL BUG FIX: Only intercept OUR request codes, otherwise we break other plugins like image_cropper!!!
+        if (requestCode != REQ_CODE_SCAN && requestCode != REQ_CODE_TAKE_IMAGE && 
+            requestCode != REQ_CODE_PICK_IMAGE && requestCode != REQ_CODE_PICK_MULTI_IMAGE && 
+            requestCode != REQ_CODE_PICK_FILE) {
+            return false
+        }
+
         if (resultCode != Activity.RESULT_OK) {
+            pendingResult?.success(null)
+            pendingResult = null
+            return true
+        }
+
+        val context = activity?.applicationContext
+        if (context == null) {
             pendingResult?.success(null)
             pendingResult = null
             return true
@@ -114,30 +162,35 @@ class AttachmentStudioPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, 
             REQ_CODE_SCAN -> {
                 val result = GmsDocumentScanningResult.fromActivityResultIntent(data)
                 result?.pages?.let { pages ->
-                    val paths = pages.map { it.imageUri.toString() }
+                    val paths = pages.map { copyUriToCache(context, it.imageUri) ?: it.imageUri.toString() }
                     pendingResult?.success(paths)
                 } ?: pendingResult?.success(null)
             }
-            REQ_CODE_TAKE_IMAGE, REQ_CODE_PICK_IMAGE, REQ_CODE_PICK_FILE -> {
-                val uri = data?.data
-                pendingResult?.success(uri?.toString())
+            REQ_CODE_TAKE_IMAGE -> {
+                pendingResult?.success(currentCameraImagePath)
+                currentCameraImagePath = null
+            }
+            REQ_CODE_PICK_IMAGE, REQ_CODE_PICK_FILE -> {
+                data?.data?.let { uri ->
+                    val path = copyUriToCache(context, uri)
+                    pendingResult?.success(path)
+                } ?: pendingResult?.success(null)
             }
             REQ_CODE_PICK_MULTI_IMAGE -> {
                 val paths = mutableListOf<String>()
                 data?.clipData?.let { clip ->
                     for (i in 0 until clip.itemCount) {
-                        paths.add(clip.getItemAt(i).uri.toString())
+                        copyUriToCache(context, clip.getItemAt(i).uri)?.let { paths.add(it) }
                     }
-                } ?: data?.data?.let { paths.add(it.toString()) }
+                } ?: data?.data?.let { uri ->
+                    copyUriToCache(context, uri)?.let { paths.add(it) }
+                }
                 pendingResult?.success(paths)
             }
-            else -> return false
         }
         pendingResult = null
         return true
     }
-
-    // ── Activity Lifecycle ──────────────────────────────────────────────────
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         activity = binding.activity

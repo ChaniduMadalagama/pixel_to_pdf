@@ -3,19 +3,26 @@ import UIKit
 import VisionKit
 import PhotosUI
 
-public class AttachmentStudioPlugin: NSObject, FlutterPlugin, VNDocumentCameraViewControllerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, PHPickerViewControllerDelegate, UIDocumentPickerDelegate {
+public class PixelToPdfPlugin: NSObject, FlutterPlugin, VNDocumentCameraViewControllerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, PHPickerViewControllerDelegate, UIDocumentPickerDelegate {
     private var result: FlutterResult?
     private var hostViewController: UIViewController?
+    private var isMultiSelectionSession: Bool = false
 
     public static func register(with registrar: FlutterPluginRegistrar) {
-        let channel = FlutterMethodChannel(name: "attachment_studio/scanner", binaryMessenger: registrar.messenger())
-        let instance = AttachmentStudioPlugin()
+        let channel = FlutterMethodChannel(name: "pixel_to_pdf/scanner", binaryMessenger: registrar.messenger())
+        let instance = PixelToPdfPlugin()
         registrar.addMethodCallDelegate(instance, channel: channel)
     }
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         self.result = result
-        self.hostViewController = UIApplication.shared.keyWindow?.rootViewController
+        self.hostViewController = UIApplication.shared.delegate?.window??.rootViewController
+        if self.hostViewController == nil {
+            if #available(iOS 13.0, *) {
+                let windowScene = UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene
+                self.hostViewController = windowScene?.windows.first(where: { $0.isKeyWindow })?.rootViewController
+            }
+        }
 
         switch call.method {
         case "scanDocument":
@@ -53,14 +60,18 @@ public class AttachmentStudioPlugin: NSObject, FlutterPlugin, VNDocumentCameraVi
                 paths.append(path)
             }
         }
+        let flResult = self.result
+        self.result = nil
         controller.dismiss(animated: true) {
-            self.result?(paths)
+            flResult?(paths)
         }
     }
 
     public func documentCameraViewControllerDidCancel(_ controller: VNDocumentCameraViewController) {
+        let flResult = self.result
+        self.result = nil
         controller.dismiss(animated: true) {
-            self.result?(nil)
+            flResult?(nil)
         }
     }
 
@@ -77,11 +88,38 @@ public class AttachmentStudioPlugin: NSObject, FlutterPlugin, VNDocumentCameraVi
         hostViewController?.present(picker, animated: true)
     }
 
-    public func imagePickerController(_ picker: UIImagePickerController, didFinishWithInfo info: [UIImagePickerController.InfoKey : Any]) {
-        if let image = info[.originalImage] as? UIImage {
-            let path = saveImageToTemp(image: image)
+    public func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+        print("native: imagePickerController didFinishPickingMediaWithInfo")
+        let flResult = self.result
+        self.result = nil
+
+        let image = (info[.originalImage] as? UIImage) ?? (info[.editedImage] as? UIImage)
+        if let img = image {
+            print("native: processing image to temp file")
+            let path = saveImageToTemp(image: img)
+            print("native: temp file path = \(path ?? "null")")
             picker.dismiss(animated: true) {
-                self.result?(path)
+                print("native: camera finished, returning path")
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                    flResult?(path)
+                }
+            }
+        } else {
+            print("native: no image found in info")
+            picker.dismiss(animated: true) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    flResult?(nil)
+                }
+            }
+        }
+    }
+
+    public func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        let flResult = self.result
+        self.result = nil
+        picker.dismiss(animated: true) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                flResult?(nil)
             }
         }
     }
@@ -89,6 +127,7 @@ public class AttachmentStudioPlugin: NSObject, FlutterPlugin, VNDocumentCameraVi
     // ── Picker ─────────────────────────────────────────────────────────────
 
     private func startPicker(isMulti: Bool) {
+        self.isMultiSelectionSession = isMulti
         var config = PHPickerConfiguration()
         config.filter = .images
         config.selectionLimit = isMulti ? 0 : 1
@@ -98,21 +137,27 @@ public class AttachmentStudioPlugin: NSObject, FlutterPlugin, VNDocumentCameraVi
     }
 
     public func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
-        picker.dismiss(animated: true)
+        let flResult = self.result
+        self.result = nil
+
         if results.isEmpty {
-            self.result?(nil)
+            picker.dismiss(animated: true) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    flResult?(nil)
+                }
+            }
             return
         }
 
         let group = DispatchGroup()
         var paths = [String]()
 
-        for result in results {
+        for r in results {
             group.enter()
-            result.itemProvider.loadObject(ofClass: UIImage.self) { (object, error) in
+            r.itemProvider.loadObject(ofClass: UIImage.self) { (object, error) in
                 if let image = object as? UIImage {
-                    if let path = self.saveImageToTemp(image: image) {
-                        paths.append(path)
+                    if let p = self.saveImageToTemp(image: image) {
+                        paths.append(p)
                     }
                 }
                 group.leave()
@@ -120,10 +165,14 @@ public class AttachmentStudioPlugin: NSObject, FlutterPlugin, VNDocumentCameraVi
         }
 
         group.notify(queue: .main) {
-            if results.count == 1 {
-                self.result?(paths.first)
-            } else {
-                self.result?(paths)
+            picker.dismiss(animated: true) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    if self.isMultiSelectionSession {
+                        flResult?(paths)
+                    } else {
+                        flResult?(paths.first)
+                    }
+                }
             }
         }
     }
@@ -137,7 +186,9 @@ public class AttachmentStudioPlugin: NSObject, FlutterPlugin, VNDocumentCameraVi
     }
 
     public func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
-        self.result?(urls.first?.path)
+        let flResult = self.result
+        self.result = nil
+        flResult?(urls.first?.path)
     }
 
     // ── Helper ─────────────────────────────────────────────────────────────
@@ -145,9 +196,13 @@ public class AttachmentStudioPlugin: NSObject, FlutterPlugin, VNDocumentCameraVi
     private func saveImageToTemp(image: UIImage) -> String? {
         guard let data = image.jpegData(compressionQuality: 0.8) else { return nil }
         let fileName = UUID().uuidString + ".jpg"
-        let path = NSTemporaryDirectory().appending(fileName)
-        let url = URL(fileURLWithPath: path)
-        try? data.write(to: url)
-        return path
+        let tempDir = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
+        let url = tempDir.appendingPathComponent(fileName)
+        do {
+            try data.write(to: url)
+            return url.path
+        } catch {
+            return nil
+        }
     }
 }

@@ -9,11 +9,11 @@ import 'package:pdf/widgets.dart' as pw;
 
 import '../models/attachment_models.dart';
 
-class AttachmentStudioService {
-  AttachmentStudioService._();
-  static final AttachmentStudioService instance = AttachmentStudioService._();
+class PixelToPdfService {
+  PixelToPdfService._();
+  static final PixelToPdfService instance = PixelToPdfService._();
 
-  static const _channel = MethodChannel('attachment_studio/scanner');
+  static const _channel = MethodChannel('pixel_to_pdf/scanner');
 
   // ── Document Scanning ───────────────────────────────────────────────────
 
@@ -30,7 +30,7 @@ class AttachmentStudioService {
       }
       return null;
     } catch (e) {
-      debugPrint('AttachmentStudioService: scanDocument error: $e');
+      debugPrint('PixelToPdfService: scanDocument error: $e');
       return null;
     }
   }
@@ -38,14 +38,27 @@ class AttachmentStudioService {
   // ── Camera ─────────────────────────────────────────────────────────────
 
   Future<AttachmentResult?> takePhoto({bool enableCropping = true}) async {
+    print("takePhoto: started, enableCropping=$enableCropping");
     try {
+      print("takePhoto: invoking 'takeImage' channel");
       final String? path = await _channel.invokeMethod('takeImage');
-      if (path == null) return null;
+      print("takePhoto: 'takeImage' channel returned path: $path");
+      
+      if (path == null) {
+        print("takePhoto: path is null, returning null early");
+        return null;
+      }
 
+      print("takePhoto: now evaluating crop step. Will crop? $enableCropping");
+      
       final file = enableCropping ? await cropImage(path) : File(path);
-      return file != null ? _resultFromPath(file.path) : null;
+      print("takePhoto: final file is: ${file?.path}");
+      
+      final result = file != null ? _resultFromPath(file.path) : null;
+      print("takePhoto: parsed result object: $result");
+      return result;
     } catch (e) {
-      debugPrint('AttachmentStudioService: takePhoto error: $e');
+      debugPrint('PixelToPdfService: takePhoto error: $e');
       return null;
     }
   }
@@ -60,7 +73,7 @@ class AttachmentStudioService {
       final file = enableCropping ? await cropImage(path) : File(path);
       return file != null ? _resultFromPath(file.path) : null;
     } catch (e) {
-      debugPrint('AttachmentStudioService: pickImage error: $e');
+      debugPrint('PixelToPdfService: pickImage error: $e');
       return null;
     }
   }
@@ -71,7 +84,7 @@ class AttachmentStudioService {
       if (results == null) return [];
       return results.map((e) => _resultFromPath(e.toString())).toList();
     } catch (e) {
-      debugPrint('AttachmentStudioService: pickMultiImage error: $e');
+      debugPrint('PixelToPdfService: pickMultiImage error: $e');
       return [];
     }
   }
@@ -86,7 +99,7 @@ class AttachmentStudioService {
       }
       return null;
     } catch (e) {
-      debugPrint('AttachmentStudioService: pickFile error: $e');
+      debugPrint('PixelToPdfService: pickFile error: $e');
       return null;
     }
   }
@@ -119,7 +132,16 @@ class AttachmentStudioService {
   }
 
   Future<File?> cropImage(String imagePath) async {
+    print("cropImage: invoked with imagePath=$imagePath");
     try {
+      if (Platform.isIOS) {
+        // Wait on iOS to allow the previous fullscreen view (Camera/Gallery) to fully settle.
+        // This ensures TOCropViewController measures the Safe Area correctly.
+        print("cropImage: iOS detected, awaiting geometry stabilization...");
+        await Future.delayed(const Duration(milliseconds: 1000));
+      }
+
+      print("cropImage: calling ImageCropper().cropImage...");
       final cropped = await ImageCropper().cropImage(
         sourcePath: imagePath,
         uiSettings: [
@@ -132,12 +154,15 @@ class AttachmentStudioService {
           ),
           IOSUiSettings(
             title: 'Crop Image',
+            embedInNavigationController: true,
           ),
         ],
       );
+      print("cropImage: returned from ImageCropper. result path: ${cropped?.path}");
       return cropped != null ? File(cropped.path) : null;
     } catch (e) {
-      debugPrint('AttachmentStudioService: cropImage error: $e');
+      debugPrint('PixelToPdfService: cropImage error: $e');
+      print("cropImage: CAUGHT EXCEPTION: $e");
       return null;
     }
   }

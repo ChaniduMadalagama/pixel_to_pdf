@@ -6,38 +6,47 @@ import './ui/attachment_picker_shell.dart';
 
 export './models/attachment_models.dart';
 export './models/attachment_config.dart';
+export './widgets/attachment_feature_button.dart';
 
-class AttachmentStudio {
-  AttachmentStudio._();
+class PixelToPdf {
+  PixelToPdf._();
 
   /// Access the raw service functions for custom UI implementations.
-  static AttachmentStudioService get service => AttachmentStudioService.instance;
+  static PixelToPdfService get service => PixelToPdfService.instance;
 
-  /// Shows the pre-built attachment picker UI.
+  /// Shows the pre-built attachment picker UI or a custom UI.
+  /// 
+  /// Provide a [builder] to design your own bottom sheet or dialog components
+  /// while still utilizing the configured UI style.
   /// 
   /// Returns a list of [AttachmentResult] if successful, or null if cancelled.
   static Future<List<AttachmentResult>?> show(
     BuildContext context, {
     required AttachmentConfig config,
+    Widget Function(BuildContext context, AttachmentConfig config)? builder,
   }) async {
     if (config.uiStyle == AttachmentUIStyle.bottomSheet) {
       return showModalBottomSheet<List<AttachmentResult>>(
         context: context,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
-        builder: (_) => AttachmentPickerShell(config: config),
+        builder: (bottomSheetContext) => builder != null 
+            ? builder(bottomSheetContext, config) 
+            : AttachmentPickerShell(config: config),
       );
     } else if (config.uiStyle == AttachmentUIStyle.dialog) {
       return showDialog<List<AttachmentResult>>(
         context: context,
-        builder: (_) => Dialog(
+        builder: (dialogContext) => Dialog(
           backgroundColor: Colors.transparent,
-          child: AttachmentPickerShell(config: config),
+          child: builder != null 
+              ? builder(dialogContext, config) 
+              : AttachmentPickerShell(config: config),
         ),
       );
     } else {
-      // For AttachmentUIStyle.custom, the developer should use AttachmentStudio.service directly.
-      debugPrint('AttachmentStudio: Custom style selected. Use AttachmentStudio.service directly.');
+      // For AttachmentUIStyle.custom, the developer should use PixelToPdf.service directly.
+      debugPrint('PixelToPdf: Custom style selected. Use PixelToPdf.service directly.');
       return null;
     }
   }
