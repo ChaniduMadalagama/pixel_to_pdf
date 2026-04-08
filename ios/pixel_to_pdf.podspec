@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'pixel_to_pdf'
-  s.version          = '1.0.0'
+  s.version          = '1.0.4'
   s.summary          = 'A comprehensive attachment picker and document scanner.'
   s.description      = <<-DESC
 A comprehensive attachment picker and document scanner for Flutter. Supports camera, gallery, file picking, and native document scanning with cropping.

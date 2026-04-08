@@ -1,8 +1,10 @@
-## 1.0.3
+## 1.0.4
 
-* **Bug Fixes**: Resolved critical iOS memory crashes during high-resolution document scanning.
-* **Refactoring**: Improved `BuildContext` safety in asynchronous gaps within the picker logic.
-* **Features**: Enhanced `PixelToPdf.show` with a custom `builder` option for fully customized acquisition UIs.
+* **Maintenance**: Cleaned up internal debugging logs and library declarations to follow high-quality Dart conventions.
+* **Features**: Added support for a custom `builder` in `PixelToPdf.show` for fully personalized acquisition UIs.
+* **Bug Fixes**: Finalized iOS memory stability improvements for high-resolution scanning.
+
+## 1.0.3
 
 ## 1.0.2
 
