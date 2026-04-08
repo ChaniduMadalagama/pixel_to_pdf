@@ -55,9 +55,11 @@ public class PixelToPdfPlugin: NSObject, FlutterPlugin, VNDocumentCameraViewCont
     public func documentCameraViewController(_ controller: VNDocumentCameraViewController, didFinishWith scan: VNDocumentCameraScan) {
         var paths = [String]()
         for i in 0..<scan.pageCount {
-            let image = scan.imageOfPage(at: i)
-            if let path = saveImageToTemp(image: image) {
-                paths.append(path)
+            autoreleasepool {
+                let image = scan.imageOfPage(at: i)
+                if let path = saveImageToTemp(image: image) {
+                    paths.append(path)
+                }
             }
         }
         let flResult = self.result
@@ -155,9 +157,11 @@ public class PixelToPdfPlugin: NSObject, FlutterPlugin, VNDocumentCameraViewCont
         for r in results {
             group.enter()
             r.itemProvider.loadObject(ofClass: UIImage.self) { (object, error) in
-                if let image = object as? UIImage {
-                    if let p = self.saveImageToTemp(image: image) {
-                        paths.append(p)
+                autoreleasepool {
+                    if let image = object as? UIImage {
+                        if let p = self.saveImageToTemp(image: image) {
+                            paths.append(p)
+                        }
                     }
                 }
                 group.leave()

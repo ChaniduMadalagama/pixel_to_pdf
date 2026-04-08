@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 import '../models/attachment_models.dart';
@@ -187,20 +188,52 @@ class PixelToPdfService {
   Future<File> buildPdf(List<String> imagePaths) async {
     final pdf = pw.Document();
     for (var path in imagePaths) {
-      if (path.startsWith('file://')) {
-        path = Uri.parse(path).toFilePath();
+      try {
+        if (path.startsWith('file://')) {
+          path = Uri.parse(path).toFilePath();
+        }
+        final bytes = await File(path).readAsBytes();
+        
+        // Use JpegImage for better compression and memory handling if it's a JPEG
+        final image = pw.MemoryImage(bytes);
+        
+        pdf.addPage(
+          pw.Page(
+            margin: const pw.EdgeInsets.all(0),
+            pageFormat: PdfPageFormat.a4.copyWith(
+              marginBottom: 0,
+              marginLeft: 0,
+              marginRight: 0,
+              marginTop: 0,
+            ),
+            build: (pw.Context context) {
+              return pw.FullPage(
+                ignoreMargins: true,
+                child: pw.Center(
+                  child: pw.Image(image, fit: pw.BoxFit.contain),
+                ),
+              );
+            },
+          ),
+        );
+      } catch (e) {
+        debugPrint('PixelToPdfService: Error adding page to PDF from $path: $e');
       }
-      final bytes = await File(path).readAsBytes();
-      final image = pw.MemoryImage(bytes);
-      pdf.addPage(
-        pw.Page(build: (ctx) => pw.Center(child: pw.Image(image))),
-      );
     }
+    
     final dir = await getTemporaryDirectory();
     final file = File(
       '${dir.path}/scan_${DateTime.now().millisecondsSinceEpoch}.pdf',
     );
-    await file.writeAsBytes(await pdf.save());
+    
+    try {
+      final pdfBytes = await pdf.save();
+      await file.writeAsBytes(pdfBytes);
+    } catch (e) {
+      debugPrint('PixelToPdfService: Error saving PDF: $e');
+      rethrow;
+    }
+    
     return file;
   }
 }
