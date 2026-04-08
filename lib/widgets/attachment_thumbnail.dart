@@ -2,7 +2,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/attachment_models.dart';
 
+/// A compact thumbnail widget representing an acquired attachment.
+/// 
+/// Displays an image preview or a PDF icon, with an optional
+/// delete button in the top-right corner.
 class AttachmentThumbnailWidget extends StatelessWidget {
+  /// Creates an [AttachmentThumbnailWidget].
   const AttachmentThumbnailWidget({
     super.key,
     required this.result,
@@ -10,8 +15,13 @@ class AttachmentThumbnailWidget extends StatelessWidget {
     this.onTap,
   });
 
+  /// The attachment result to display.
   final AttachmentResult result;
+
+  /// Optional callback triggered when the delete (close) button is tapped.
   final VoidCallback? onDelete;
+
+  /// Optional callback triggered when the entire thumbnail is tapped.
   final VoidCallback? onTap;
 
   @override

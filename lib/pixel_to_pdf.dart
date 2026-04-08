@@ -1,3 +1,7 @@
+/// A comprehensive attachment picker and document scanner for Flutter.
+/// Supports camera, gallery, file picking, and native document scanning.
+library pixel_to_pdf;
+
 import 'package:flutter/material.dart';
 import './core/attachment_service.dart';
 import './models/attachment_config.dart';
@@ -7,6 +11,8 @@ import './ui/attachment_picker_shell.dart';
 export './models/attachment_models.dart';
 export './models/attachment_config.dart';
 export './widgets/attachment_feature_button.dart';
+export './widgets/attachment_thumbnail.dart';
+export './widgets/app_image_viewer.dart';
 
 /// The primary entry point for the pixel_to_pdf package.
 /// 

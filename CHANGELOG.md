@@ -1,3 +1,9 @@
+## 1.0.2
+
+* **Documentation**: Completed documentation for all public widgets and members.
+* **Example**: Fully restored the package example app with a comprehensive demonstration UI.
+* **API**: Exported `AttachmentThumbnailWidget` and `AttachmentViewer` for public use.
+
 ## 1.0.1
 
 * **Documentation**: Added comprehensive public API documentation across the entire package. Improved Pub.dev score.

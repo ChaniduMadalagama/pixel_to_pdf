@@ -2,12 +2,18 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/attachment_models.dart';
 
+/// A fullscreen viewer widget for displaying acquired attachments.
+/// 
+/// Supports interactive image viewing with pinch-to-zoom and provides
+/// a PDF placeholder with file metadata.
 class AttachmentViewer extends StatelessWidget {
+  /// Creates an [AttachmentViewer] for the given [result].
   const AttachmentViewer({
     super.key,
     required this.result,
   });
 
+  /// The attachment result to be displayed in the viewer.
   final AttachmentResult result;
 
   /// Shows the viewer as a full-screen transition.
