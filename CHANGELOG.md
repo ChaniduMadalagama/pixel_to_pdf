@@ -1,3 +1,7 @@
+## 1.0.1
+
+* **Documentation**: Added comprehensive public API documentation across the entire package. Improved Pub.dev score.
+
 ## 1.0.0
 
 * Initial release of `pixel_to_pdf`.
