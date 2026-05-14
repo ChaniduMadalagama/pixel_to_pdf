@@ -86,11 +86,20 @@ class PixelToPdfService {
   /// Picks multiple images from the device gallery.
   /// 
   /// Returns a list of [AttachmentResult] objects.
-  Future<List<AttachmentResult>> pickMultiFromGallery() async {
+  Future<List<AttachmentResult>> pickMultiFromGallery({int? maxCount}) async {
     try {
-      final List? results = await _channel.invokeMethod('pickMultiImage');
+      final List? results = await _channel.invokeMethod('pickMultiImage', {
+        'maxCount': maxCount,
+      });
       if (results == null) return [];
-      return results.map((e) => _resultFromPath(e.toString())).toList();
+      var attachmentResults = results.map((e) => _resultFromPath(e.toString())).toList();
+      
+      // Enforce limit in Dart for Android as native might not support it
+      if (maxCount != null && maxCount > 0 && attachmentResults.length > maxCount) {
+        attachmentResults = attachmentResults.take(maxCount).toList();
+      }
+      
+      return attachmentResults;
     } catch (e) {
       debugPrint('PixelToPdfService: pickMultiImage error: $e');
       return [];
@@ -110,6 +119,27 @@ class PixelToPdfService {
     } catch (e) {
       debugPrint('PixelToPdfService: pickFile error: $e');
       return null;
+    }
+  }
+
+  /// Picks multiple files from the device storage.
+  Future<List<AttachmentResult>> pickMultiFiles({int? maxCount}) async {
+    try {
+      final List? results = await _channel.invokeMethod('pickMultiFile', {
+        'maxCount': maxCount,
+      });
+      if (results == null) return [];
+      var attachmentResults = results.map((e) => _resultFromPath(e.toString())).toList();
+      
+      // Enforce limit in Dart for Android as native might not support it
+      if (maxCount != null && maxCount > 0 && attachmentResults.length > maxCount) {
+        attachmentResults = attachmentResults.take(maxCount).toList();
+      }
+      
+      return attachmentResults;
+    } catch (e) {
+      debugPrint('PixelToPdfService: pickMultiFile error: $e');
+      return [];
     }
   }
 

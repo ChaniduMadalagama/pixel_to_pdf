@@ -32,9 +32,15 @@ public class PixelToPdfPlugin: NSObject, FlutterPlugin, VNDocumentCameraViewCont
         case "pickImage":
             startPicker(isMulti: false)
         case "pickMultiImage":
-            startPicker(isMulti: true)
+            let args = call.arguments as? [String: Any]
+            let maxCount = args?["maxCount"] as? Int ?? 0
+            startPicker(isMulti: true, maxCount: maxCount)
         case "pickFile":
-            startFilePicker()
+            startFilePicker(isMulti: false)
+        case "pickMultiFile":
+            let args = call.arguments as? [String: Any]
+            let maxCount = args?["maxCount"] as? Int ?? 0
+            startFilePicker(isMulti: true, maxCount: maxCount)
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -128,11 +134,11 @@ public class PixelToPdfPlugin: NSObject, FlutterPlugin, VNDocumentCameraViewCont
 
     // ── Picker ─────────────────────────────────────────────────────────────
 
-    private func startPicker(isMulti: Bool) {
+    private func startPicker(isMulti: Bool, maxCount: Int = 0) {
         self.isMultiSelectionSession = isMulti
         var config = PHPickerConfiguration()
         config.filter = .images
-        config.selectionLimit = isMulti ? 0 : 1
+        config.selectionLimit = isMulti ? maxCount : 1
         let picker = PHPickerViewController(configuration: config)
         picker.delegate = self
         hostViewController?.present(picker, animated: true)
@@ -183,16 +189,23 @@ public class PixelToPdfPlugin: NSObject, FlutterPlugin, VNDocumentCameraViewCont
 
     // ── File Picker ────────────────────────────────────────────────────────
 
-    private func startFilePicker() {
+    private func startFilePicker(isMulti: Bool, maxCount: Int = 0) {
+        self.isMultiSelectionSession = isMulti
         let picker = UIDocumentPickerViewController(documentTypes: ["public.item"], in: .import)
         picker.delegate = self
+        picker.allowsMultipleSelection = isMulti
         hostViewController?.present(picker, animated: true)
     }
 
     public func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
         let flResult = self.result
         self.result = nil
-        flResult?(urls.first?.path)
+        
+        if isMultiSelectionSession {
+            flResult?(urls.map { $0.path })
+        } else {
+            flResult?(urls.first?.path)
+        }
     }
 
     // ── Helper ─────────────────────────────────────────────────────────────

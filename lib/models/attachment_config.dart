@@ -45,6 +45,8 @@ class AttachmentConfig {
     this.allowMultipleGallery = true,
     this.theme = AttachmentTheme.dark,
     this.maxScanPages = 20,
+    this.maxImageCount = 0,
+    this.maxFileCount = 0,
   });
 
   /// The list of enabled features (e.g., [AttachmentFeature.scanDoc]).
@@ -64,4 +66,12 @@ class AttachmentConfig {
 
   /// The maximum number of pages allowed in a single document scan session.
   final int maxScanPages;
+
+  /// The maximum number of images allowed to be selected from the gallery.
+  /// Set to 0 for unlimited selection.
+  final int maxImageCount;
+
+  /// The maximum number of files allowed to be selected from the file picker.
+  /// Set to 0 for unlimited selection.
+  final int maxFileCount;
 }

@@ -49,7 +49,9 @@ class AttachmentFeatureButton extends StatelessWidget {
         if (result != null) onResult?.call([result]);
       } else if (feature == AttachmentFeature.fromGallery) {
         if (config.allowMultipleGallery) {
-          final results = await PixelToPdfService.instance.pickMultiFromGallery();
+          final results = await PixelToPdfService.instance.pickMultiFromGallery(
+            maxCount: config.maxImageCount,
+          );
           if (results.isNotEmpty) onResult?.call(results);
         } else {
           final result = await PixelToPdfService.instance.pickImage(
@@ -58,8 +60,15 @@ class AttachmentFeatureButton extends StatelessWidget {
           if (result != null) onResult?.call([result]);
         }
       } else if (feature == AttachmentFeature.fromFiles) {
-        final result = await PixelToPdfService.instance.pickFile();
-        if (result != null) onResult?.call([result]);
+        if (config.maxFileCount == 0 || config.maxFileCount > 1) {
+          final results = await PixelToPdfService.instance.pickMultiFiles(
+            maxCount: config.maxFileCount,
+          );
+          if (results.isNotEmpty) onResult?.call(results);
+        } else {
+          final result = await PixelToPdfService.instance.pickFile();
+          if (result != null) onResult?.call([result]);
+        }
       }
     } finally {
       onProcessingStateChanged?.call(false);

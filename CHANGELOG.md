@@ -1,3 +1,10 @@
+## 1.0.6
+
+* **Features**: Added `maxImageCount` and `maxFileCount` to `AttachmentConfig` to limit selection counts.
+* **Enhancement**: Added multi-selection support for the file picker.
+* **Platform**: Implemented native selection limits for iOS (PHPicker) and enforced limits in Dart for Android.
+* **Bug Fixes**: Fixed result handling in Android to correctly return lists for multi-selection.
+
 ## 1.0.5
 
 * **Enhancement**: Added Swift Package Manager (SPM) support for iOS, improving package resolution and pub.dev compatibility.

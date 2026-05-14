@@ -35,6 +35,7 @@ class PixelToPdfPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
     private var activity: Activity? = null
     private var pendingResult: Result? = null
     private var currentCameraImagePath: String? = null
+    private var isMultiSelectionSession: Boolean = false
 
     private val REQ_CODE_SCAN = 1001
     private val REQ_CODE_TAKE_IMAGE = 1002
@@ -62,9 +63,22 @@ class PixelToPdfPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
         when (call.method) {
             "scanDocument" -> startScan()
             "takeImage" -> startCamera()
-            "pickImage" -> startPicker(false)
-            "pickMultiImage" -> startPicker(true)
-            "pickFile" -> startFilePicker()
+            "pickImage" -> {
+                isMultiSelectionSession = false
+                startPicker(false)
+            }
+            "pickMultiImage" -> {
+                isMultiSelectionSession = true
+                startPicker(true)
+            }
+            "pickFile" -> {
+                isMultiSelectionSession = false
+                startFilePicker(false)
+            }
+            "pickMultiFile" -> {
+                isMultiSelectionSession = true
+                startFilePicker(true)
+            }
             else -> result.notImplemented()
         }
     }
@@ -146,9 +160,12 @@ class PixelToPdfPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
         activity?.startActivityForResult(intent, if (isMulti) REQ_CODE_PICK_MULTI_IMAGE else REQ_CODE_PICK_IMAGE)
     }
 
-    private fun startFilePicker() {
+    private fun startFilePicker(isMulti: Boolean) {
         val intent = Intent(Intent.ACTION_GET_CONTENT)
         intent.type = "*/*"
+        if (isMulti) {
+            intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+        }
         activity?.startActivityForResult(intent, REQ_CODE_PICK_FILE)
     }
 
@@ -203,11 +220,31 @@ class PixelToPdfPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
                 pendingResult?.success(currentCameraImagePath)
                 currentCameraImagePath = null
             }
-            REQ_CODE_PICK_IMAGE, REQ_CODE_PICK_FILE -> {
+            REQ_CODE_PICK_IMAGE -> {
                 data?.data?.let { uri ->
                     val path = copyUriToCache(context, uri)
                     pendingResult?.success(path)
                 } ?: pendingResult?.success(null)
+            }
+            REQ_CODE_PICK_FILE -> {
+                val paths = mutableListOf<String>()
+                data?.clipData?.let { clip ->
+                    for (i in 0 until clip.itemCount) {
+                        copyUriToCache(context, clip.getItemAt(i).uri)?.let { paths.add(it) }
+                    }
+                } ?: data?.data?.let { uri ->
+                    copyUriToCache(context, uri)?.let { paths.add(it) }
+                }
+                
+                if (paths.isEmpty()) {
+                    pendingResult?.success(null)
+                } else {
+                    if (isMultiSelectionSession) {
+                        pendingResult?.success(paths)
+                    } else {
+                        pendingResult?.success(paths.first())
+                    }
+                }
             }
             REQ_CODE_PICK_MULTI_IMAGE -> {
                 val paths = mutableListOf<String>()
