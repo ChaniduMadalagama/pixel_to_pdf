@@ -93,12 +93,6 @@ class PixelToPdfService {
       });
       if (results == null) return [];
       var attachmentResults = results.map((e) => _resultFromPath(e.toString())).toList();
-      
-      // Enforce limit in Dart for Android as native might not support it
-      if (maxCount != null && maxCount > 0 && attachmentResults.length > maxCount) {
-        attachmentResults = attachmentResults.take(maxCount).toList();
-      }
-      
       return attachmentResults;
     } catch (e) {
       debugPrint('PixelToPdfService: pickMultiImage error: $e');
@@ -130,12 +124,6 @@ class PixelToPdfService {
       });
       if (results == null) return [];
       var attachmentResults = results.map((e) => _resultFromPath(e.toString())).toList();
-      
-      // Enforce limit in Dart for Android as native might not support it
-      if (maxCount != null && maxCount > 0 && attachmentResults.length > maxCount) {
-        attachmentResults = attachmentResults.take(maxCount).toList();
-      }
-      
       return attachmentResults;
     } catch (e) {
       debugPrint('PixelToPdfService: pickMultiFile error: $e');

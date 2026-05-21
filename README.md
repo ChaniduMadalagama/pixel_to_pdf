@@ -66,17 +66,3 @@ final results = await PixelToPdf.show(
   ),
 );
 ```
-
-## Local Development
-
-To test this package locally:
-```yaml
-dependencies:
-  pixel_to_pdf:
-    path: ../pixel_to_pdf
-```
-
-## Publishing
-
-1. Check for issues: `flutter pub publish --dry-run`
-2. Publish: `flutter pub publish`

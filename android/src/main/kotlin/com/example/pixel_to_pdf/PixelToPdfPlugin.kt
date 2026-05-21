@@ -36,6 +36,7 @@ class PixelToPdfPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
     private var pendingResult: Result? = null
     private var currentCameraImagePath: String? = null
     private var isMultiSelectionSession: Boolean = false
+    private var currentMaxCount: Int = 0
 
     private val REQ_CODE_SCAN = 1001
     private val REQ_CODE_TAKE_IMAGE = 1002
@@ -68,16 +69,18 @@ class PixelToPdfPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
                 startPicker(false)
             }
             "pickMultiImage" -> {
+                val maxCount = call.argument<Int>("maxCount") ?: 0
                 isMultiSelectionSession = true
-                startPicker(true)
+                startPicker(true, maxCount)
             }
             "pickFile" -> {
                 isMultiSelectionSession = false
                 startFilePicker(false)
             }
             "pickMultiFile" -> {
+                val maxCount = call.argument<Int>("maxCount") ?: 0
                 isMultiSelectionSession = true
-                startFilePicker(true)
+                startFilePicker(true, maxCount)
             }
             else -> result.notImplemented()
         }
@@ -152,19 +155,87 @@ class PixelToPdfPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
         return false
     }
 
-    private fun startPicker(isMulti: Boolean) {
-        val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+    private fun startPicker(isMulti: Boolean, maxCount: Int = 0) {
+        val currentActivity = activity ?: return
+        currentMaxCount = maxCount
+        
         if (isMulti) {
-            intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+            // 1. Try launching the modern Android Photo Picker first (shows beautiful multi-select checkboxes immediately)
+            try {
+                val intent = Intent(MediaStore.ACTION_PICK_IMAGES).apply {
+                    type = "image/*"
+                    if (maxCount > 0) {
+                        val systemMax = if (android.os.Build.VERSION.SDK_INT >= 33) {
+                            try { MediaStore.getPickImagesMaxLimit() } catch (e: Throwable) { 100 }
+                        } else {
+                            100
+                        }
+                        val maxLimit = minOf(maxCount, systemMax)
+                        putExtra(MediaStore.EXTRA_PICK_IMAGES_MAX, maxLimit)
+                    } else {
+                        val systemMax = if (android.os.Build.VERSION.SDK_INT >= 33) {
+                            try { MediaStore.getPickImagesMaxLimit() } catch (e: Throwable) { 100 }
+                        } else {
+                            100
+                        }
+                        putExtra(MediaStore.EXTRA_PICK_IMAGES_MAX, systemMax)
+                    }
+                }
+                currentActivity.startActivityForResult(intent, REQ_CODE_PICK_MULTI_IMAGE)
+                return
+            } catch (e: Throwable) {
+                // MediaStore.ACTION_PICK_IMAGES not supported/failed, fall back
+            }
+
+            // 2. Fall back to ACTION_OPEN_DOCUMENT (which is extremely reliable for multi-selection on all manufacturers)
+            try {
+                val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                    type = "image/*"
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+                }
+                currentActivity.startActivityForResult(intent, REQ_CODE_PICK_MULTI_IMAGE)
+                return
+            } catch (e: Throwable) {
+                // Fall back to ACTION_GET_CONTENT as a last resort
+            }
+
+            // 3. Last resort fallback
+            val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                type = "image/*"
+                putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+            }
+            currentActivity.startActivityForResult(intent, REQ_CODE_PICK_MULTI_IMAGE)
+        } else {
+            // Single image selection: ACTION_PICK is perfectly fine and standard
+            val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+            currentActivity.startActivityForResult(intent, REQ_CODE_PICK_IMAGE)
         }
-        activity?.startActivityForResult(intent, if (isMulti) REQ_CODE_PICK_MULTI_IMAGE else REQ_CODE_PICK_IMAGE)
     }
 
-    private fun startFilePicker(isMulti: Boolean) {
-        val intent = Intent(Intent.ACTION_GET_CONTENT)
-        intent.type = "*/*"
+    private fun startFilePicker(isMulti: Boolean, maxCount: Int = 0) {
+        currentMaxCount = maxCount
+        
         if (isMulti) {
-            intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+            // Use ACTION_OPEN_DOCUMENT which is highly reliable for multi-file selection
+            try {
+                val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                    type = "*/*"
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+                }
+                activity?.startActivityForResult(intent, REQ_CODE_PICK_FILE)
+                return
+            } catch (e: Throwable) {
+                // Fall back to ACTION_GET_CONTENT
+            }
+        }
+
+        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+            type = "*/*"
+            if (isMulti) {
+                putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+            }
         }
         activity?.startActivityForResult(intent, REQ_CODE_PICK_FILE)
     }
@@ -240,7 +311,18 @@ class PixelToPdfPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
                     pendingResult?.success(null)
                 } else {
                     if (isMultiSelectionSession) {
-                        pendingResult?.success(paths)
+                        var finalPaths = paths
+                        if (currentMaxCount > 0 && paths.size > currentMaxCount) {
+                            finalPaths = paths.take(currentMaxCount).toMutableList()
+                            activity?.runOnUiThread {
+                                android.widget.Toast.makeText(
+                                    context,
+                                    "Maximum $currentMaxCount files allowed. Truncating selection.",
+                                    android.widget.Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        }
+                        pendingResult?.success(finalPaths)
                     } else {
                         pendingResult?.success(paths.first())
                     }
@@ -255,7 +337,19 @@ class PixelToPdfPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
                 } ?: data?.data?.let { uri ->
                     copyUriToCache(context, uri)?.let { paths.add(it) }
                 }
-                pendingResult?.success(paths)
+                
+                var finalPaths = paths
+                if (currentMaxCount > 0 && paths.size > currentMaxCount) {
+                    finalPaths = paths.take(currentMaxCount).toMutableList()
+                    activity?.runOnUiThread {
+                        android.widget.Toast.makeText(
+                            context,
+                            "Maximum $currentMaxCount images allowed. Truncating selection.",
+                            android.widget.Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+                pendingResult?.success(finalPaths)
             }
         }
         pendingResult = null

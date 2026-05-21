@@ -159,18 +159,26 @@ public class PixelToPdfPlugin: NSObject, FlutterPlugin, VNDocumentCameraViewCont
 
         let group = DispatchGroup()
         var paths = [String]()
+        let semaphore = DispatchSemaphore(value: 2)
+        let queue = DispatchQueue(label: "com.pixel_to_pdf.picker_queue", qos: .userInitiated)
 
         for r in results {
             group.enter()
-            r.itemProvider.loadObject(ofClass: UIImage.self) { (object, error) in
-                autoreleasepool {
-                    if let image = object as? UIImage {
-                        if let p = self.saveImageToTemp(image: image) {
-                            paths.append(p)
+            queue.async {
+                semaphore.wait()
+                r.itemProvider.loadObject(ofClass: UIImage.self) { (object, error) in
+                    autoreleasepool {
+                        if let image = object as? UIImage {
+                            if let p = self.saveImageToTemp(image: image) {
+                                DispatchQueue.main.async {
+                                    paths.append(p)
+                                }
+                            }
                         }
                     }
+                    semaphore.signal()
+                    group.leave()
                 }
-                group.leave()
             }
         }
 

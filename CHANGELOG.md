@@ -1,3 +1,8 @@
+## 1.0.7
+
+* **Bug Fixes**: Fixed image compression quality issues.
+* **Maintenance**: Fixed memory leak in iOS platform by properly disposing of platform views.
+
 ## 1.0.6
 
 * **Features**: Added `maxImageCount` and `maxFileCount` to `AttachmentConfig` to limit selection counts.

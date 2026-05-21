@@ -35,7 +35,7 @@ class AttachmentFeatureButton extends StatelessWidget {
   /// If provided, uses a [GestureDetector] to wrap this child.
   final Widget? child;
 
-  Future<void> _handleTap() async {
+  Future<void> _handleTap(BuildContext context) async {
     onProcessingStateChanged?.call(true);
 
     try {
@@ -48,11 +48,25 @@ class AttachmentFeatureButton extends StatelessWidget {
         final result = await PixelToPdfService.instance.scanDocument();
         if (result != null) onResult?.call([result]);
       } else if (feature == AttachmentFeature.fromGallery) {
-        if (config.allowMultipleGallery) {
+        if (config.allowMultipleGallery && (config.maxImageCount == 0 || config.maxImageCount > 1)) {
           final results = await PixelToPdfService.instance.pickMultiFromGallery(
             maxCount: config.maxImageCount,
           );
-          if (results.isNotEmpty) onResult?.call(results);
+          if (results.isNotEmpty) {
+            var finalResults = results;
+            if (config.maxImageCount > 0 && results.length > config.maxImageCount) {
+              finalResults = results.take(config.maxImageCount).toList();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Maximum ${config.maxImageCount} images allowed. Truncating selection.'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+              }
+            }
+            onResult?.call(finalResults);
+          }
         } else {
           final result = await PixelToPdfService.instance.pickImage(
             enableCropping: config.enableCropping,
@@ -64,7 +78,21 @@ class AttachmentFeatureButton extends StatelessWidget {
           final results = await PixelToPdfService.instance.pickMultiFiles(
             maxCount: config.maxFileCount,
           );
-          if (results.isNotEmpty) onResult?.call(results);
+          if (results.isNotEmpty) {
+            var finalResults = results;
+            if (config.maxFileCount > 0 && results.length > config.maxFileCount) {
+              finalResults = results.take(config.maxFileCount).toList();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Maximum ${config.maxFileCount} files allowed. Truncating selection.'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+              }
+            }
+            onResult?.call(finalResults);
+          }
         } else {
           final result = await PixelToPdfService.instance.pickFile();
           if (result != null) onResult?.call([result]);
@@ -80,7 +108,7 @@ class AttachmentFeatureButton extends StatelessWidget {
     // If the user provided their own custom UI, just wrap it with our functionality!
     if (child != null) {
       return GestureDetector(
-        onTap: _handleTap,
+        onTap: () => _handleTap(context),
         child: child,
       );
     }
@@ -114,7 +142,7 @@ class AttachmentFeatureButton extends StatelessWidget {
     }
 
     return GestureDetector(
-      onTap: _handleTap,
+      onTap: () => _handleTap(context),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 24),
         decoration: BoxDecoration(
