@@ -103,9 +103,11 @@ class PixelToPdfService {
   // ── File Picker ────────────────────────────────────────────────────────
 
   /// Launches the device file picker to select any document or file.
-  Future<AttachmentResult?> pickFile() async {
+  Future<AttachmentResult?> pickFile({bool photosOnly = false}) async {
     try {
-      final String? path = await _channel.invokeMethod('pickFile');
+      final String? path = await _channel.invokeMethod('pickFile', {
+        'photosOnly': photosOnly,
+      });
       if (path != null) {
         return _resultFromPath(path);
       }
@@ -117,10 +119,11 @@ class PixelToPdfService {
   }
 
   /// Picks multiple files from the device storage.
-  Future<List<AttachmentResult>> pickMultiFiles({int? maxCount}) async {
+  Future<List<AttachmentResult>> pickMultiFiles({int? maxCount, bool photosOnly = false}) async {
     try {
       final List? results = await _channel.invokeMethod('pickMultiFile', {
         'maxCount': maxCount,
+        'photosOnly': photosOnly,
       });
       if (results == null) return [];
       var attachmentResults = results.map((e) => _resultFromPath(e.toString())).toList();

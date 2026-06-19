@@ -77,6 +77,7 @@ class AttachmentFeatureButton extends StatelessWidget {
         if (config.maxFileCount == 0 || config.maxFileCount > 1) {
           final results = await PixelToPdfService.instance.pickMultiFiles(
             maxCount: config.maxFileCount,
+            photosOnly: config.photosOnly,
           );
           if (results.isNotEmpty) {
             var finalResults = results;
@@ -94,7 +95,9 @@ class AttachmentFeatureButton extends StatelessWidget {
             onResult?.call(finalResults);
           }
         } else {
-          final result = await PixelToPdfService.instance.pickFile();
+          final result = await PixelToPdfService.instance.pickFile(
+            photosOnly: config.photosOnly,
+          );
           if (result != null) onResult?.call([result]);
         }
       }

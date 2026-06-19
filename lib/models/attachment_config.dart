@@ -47,6 +47,7 @@ class AttachmentConfig {
     this.maxScanPages = 20,
     this.maxImageCount = 0,
     this.maxFileCount = 0,
+    this.photosOnly = false,
   });
 
   /// The list of enabled features (e.g., [AttachmentFeature.scanDoc]).
@@ -74,4 +75,7 @@ class AttachmentConfig {
   /// The maximum number of files allowed to be selected from the file picker.
   /// Set to 0 for unlimited selection.
   final int maxFileCount;
+
+  /// Whether to only show photos when picking from files.
+  final bool photosOnly;
 }

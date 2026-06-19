@@ -75,12 +75,14 @@ class PixelToPdfPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
             }
             "pickFile" -> {
                 isMultiSelectionSession = false
-                startFilePicker(false)
+                val photosOnly = call.argument<Boolean>("photosOnly") ?: false
+                startFilePicker(false, 0, photosOnly)
             }
             "pickMultiFile" -> {
                 val maxCount = call.argument<Int>("maxCount") ?: 0
+                val photosOnly = call.argument<Boolean>("photosOnly") ?: false
                 isMultiSelectionSession = true
-                startFilePicker(true, maxCount)
+                startFilePicker(true, maxCount, photosOnly)
             }
             else -> result.notImplemented()
         }
@@ -213,14 +215,14 @@ class PixelToPdfPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
         }
     }
 
-    private fun startFilePicker(isMulti: Boolean, maxCount: Int = 0) {
+    private fun startFilePicker(isMulti: Boolean, maxCount: Int = 0, photosOnly: Boolean = false) {
         currentMaxCount = maxCount
         
         if (isMulti) {
             // Use ACTION_OPEN_DOCUMENT which is highly reliable for multi-file selection
             try {
                 val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-                    type = "*/*"
+                    type = if (photosOnly) "image/*" else "*/*"
                     addCategory(Intent.CATEGORY_OPENABLE)
                     putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
                 }
@@ -232,7 +234,7 @@ class PixelToPdfPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
         }
 
         val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
-            type = "*/*"
+            type = if (photosOnly) "image/*" else "*/*"
             if (isMulti) {
                 putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
             }

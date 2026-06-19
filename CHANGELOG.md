@@ -1,3 +1,7 @@
+## 1.0.8
+
+* **Features**: Added `photosOnly` property to `AttachmentConfig` to allow restricting file pickers to image files only.
+
 ## 1.0.7
 
 * **Bug Fixes**: Fixed image compression quality issues.

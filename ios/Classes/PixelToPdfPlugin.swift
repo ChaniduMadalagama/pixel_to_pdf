@@ -36,11 +36,14 @@ public class PixelToPdfPlugin: NSObject, FlutterPlugin, VNDocumentCameraViewCont
             let maxCount = args?["maxCount"] as? Int ?? 0
             startPicker(isMulti: true, maxCount: maxCount)
         case "pickFile":
-            startFilePicker(isMulti: false)
+            let args = call.arguments as? [String: Any]
+            let photosOnly = args?["photosOnly"] as? Bool ?? false
+            startFilePicker(isMulti: false, photosOnly: photosOnly)
         case "pickMultiFile":
             let args = call.arguments as? [String: Any]
             let maxCount = args?["maxCount"] as? Int ?? 0
-            startFilePicker(isMulti: true, maxCount: maxCount)
+            let photosOnly = args?["photosOnly"] as? Bool ?? false
+            startFilePicker(isMulti: true, maxCount: maxCount, photosOnly: photosOnly)
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -197,9 +200,10 @@ public class PixelToPdfPlugin: NSObject, FlutterPlugin, VNDocumentCameraViewCont
 
     // ── File Picker ────────────────────────────────────────────────────────
 
-    private func startFilePicker(isMulti: Bool, maxCount: Int = 0) {
+    private func startFilePicker(isMulti: Bool, maxCount: Int = 0, photosOnly: Bool = false) {
         self.isMultiSelectionSession = isMulti
-        let picker = UIDocumentPickerViewController(documentTypes: ["public.item"], in: .import)
+        let docTypes = photosOnly ? ["public.image"] : ["public.item"]
+        let picker = UIDocumentPickerViewController(documentTypes: docTypes, in: .import)
         picker.delegate = self
         picker.allowsMultipleSelection = isMulti
         hostViewController?.present(picker, animated: true)
