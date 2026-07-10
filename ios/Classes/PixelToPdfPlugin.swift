@@ -220,6 +220,12 @@ public class PixelToPdfPlugin: NSObject, FlutterPlugin, VNDocumentCameraViewCont
         }
     }
 
+    public func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
+        let flResult = self.result
+        self.result = nil
+        flResult?(nil)
+    }
+
     // ── Helper ─────────────────────────────────────────────────────────────
 
     private func saveImageToTemp(image: UIImage) -> String? {
