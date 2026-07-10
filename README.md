@@ -17,7 +17,7 @@ Add `pixel_to_pdf` to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  pixel_to_pdf: ^1.0.8
+  pixel_to_pdf: ^1.0.9
 ```
 
 ### Android Setup

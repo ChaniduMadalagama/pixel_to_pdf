@@ -1,3 +1,7 @@
+## 1.0.9
+
+* **Bug Fixes**: Fixed a UI bug where the file upload panel would get stuck with a spinning loader when cancelling the file picker.
+
 ## 1.0.8
 
 * **Features**: Added `photosOnly` property to `AttachmentConfig` to allow restricting file pickers to image files only.
